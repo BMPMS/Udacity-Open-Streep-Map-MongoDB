@@ -1,4 +1,5 @@
 
+import re
 #fetching my database.  This has been imported using the following statement in the terminal
 def get_db(db_name):
     from pymongo import MongoClient
@@ -20,10 +21,48 @@ unqusers = db.bath.aggregate([
                      { "$group": { "_id": "$created.user", "count": { "$sum": 1} } },
                      { "$sort": { "count": -1 } }
                    ])
-for u in unqusers:
-    print(u)
 
 print("Unique Users:",len(list(unqusers)))
+
+amlist = ["veterinary","school","community_centre","doctors","dog_bin"]
+
+
+for a in amlist:
+    amsearch = db.bath.aggregate([
+
+        {"$match":{"amenity":a}},
+        { "$group": { "_id": "$created.user", "count": { "$sum": 1} } },
+        { "$sort": { "count": -1 } }
+        ])
+
+
+    print(a,"count in the whole area:",len(list(amsearch)))
+
+
+    regstr = "^BA"
+    regx = re.compile(regstr)
+    BAamsearch = db.bath.aggregate([
+        {"$match":{"address.postcode":regx}},
+        {"$match":{"amenity":a}},
+        { "$group": { "_id": "$created.user", "count": { "$sum": 1} } },
+        { "$sort": { "count": -1 } }
+        ])
+    blist = list(BAamsearch)
+    print(a,"count in the BA area : ",len(blist))
+
+BAamsearch = db.bath.aggregate([
+    {"$match":{"amenity":{"$exists":1}}},
+    { "$group": { "_id": "$created.user", "count": { "$sum": 1} } },
+    { "$sort": { "count": -1 } }
+    ])
+blist = list(BAamsearch)
+print("Total ameneties in the BA area : ",len(blist))
+
+"""
+
+
+
+
 
 
 #check out amenities
@@ -31,6 +70,7 @@ amen = db.bath.distinct("amenity")
 amen.sort()
 for a in amen:
     print(a)
+
 
 #find non-meaningful amenities
 amenyes = db.bath.find({"amenity":"yes"})
@@ -60,3 +100,4 @@ fixes = db.bath.distinct("FIXME")
 for f in fixes:
     print(f)
 print(db.bath.find({"FIXME":{"$exists":1}}).count())
+"""
